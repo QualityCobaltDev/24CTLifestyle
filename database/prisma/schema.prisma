@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MembershipTier {
+  BASIC
+  INTERMEDIATE
+  EXPERT
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+model User {
+  id              String          @id @default(uuid())
+  name            String
+  email           String          @unique
+  password        String?
+  googleAuth      Boolean         @default(false)
+  membershipTier  MembershipTier  @default(BASIC)
+  accountStatus   String          @default("ACTIVE")
+  role            Role            @default(USER)
+  createdAt       DateTime        @default(now())
+  subscriptions   Subscription[]
+  payments        Payment[]
+}
+
+model Subscription {
+  id              String          @id @default(uuid())
+  userId          String
+  tier            MembershipTier
+  paymentProvider String
+  billingCycle    String
+  nextBillingDate DateTime
+  user            User            @relation(fields: [userId], references: [id])
+}
+
+model Resource {
+  id             String          @id @default(uuid())
+  title          String
+  description    String
+  tierRequired   MembershipTier
+  fileUrl        String
+  previewEnabled Boolean         @default(true)
+}
+
+model Payment {
+  id            String   @id @default(uuid())
+  userId        String
+  amount        Float
+  paymentMethod String
+  status        String
+  timestamp     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id])
+}
+
+model AdminLog {
+  id        String   @id @default(uuid())
+  adminId   String
+  action    String
+  timestamp DateTime @default(now())
+}
